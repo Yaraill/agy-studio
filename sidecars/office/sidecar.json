@@ -1,0 +1,21 @@
+{
+  "command": "node",
+  "args": ["main.mjs"],
+  "restart_policy": "always",
+  "display_name": "AGY Studio",
+  "description": "Live pixel-art office & multi-agent monitor for Antigravity (Orchestrator Argon/Neon, Hydrogen, Claude, Swarm) and external CLIs (Claude Code, Codex, Copilot, OpenCode, DeepSeek).",
+  "has_web_ui": true,
+  "agent_permissions": {
+    "allows_user_interactions": false
+  },
+  "ui_config": {
+    "display_name": "AGY Studio",
+    "views": [
+      {
+        "path": "/",
+        "entrypoint": "SIDECAR_UI_ENTRYPOINT_AUX_PANE",
+        "title": "AGY Studio"
+      }
+    ]
+  }
+}

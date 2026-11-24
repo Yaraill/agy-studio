@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AGY Studio</title>
+  <script src="/preload.js"></script>
+  <style>
+    :root {
+      color-scheme: dark light;
+      --background: #0b0f17;
+      --content: #111723;
+      --card: #151c2a;
+      --card-border: #222c3f;
+      --border: #2a364d;
+      --foreground: #f1f5f9;
+      --muted-foreground: #94a3b8;
+      --primary: #38bdf8;
+      --primary-foreground: #090d16;
+      --secondary: #1e293b;
+      --secondary-foreground: #e2e8f0;
+      --accent: #263449;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+    button {
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: inherit;
+      padding: 0;
+    }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .panel-flush { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .row-between { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .row-center { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .divider-top { border-top: 1px solid var(--card-border); padding-top: 8px; }
+    .title { font-weight: 600; font-size: 14px; color: var(--foreground); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+    .muted { color: var(--muted-foreground); }
+    .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge {
+      font-size: 11.5px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--content);
+      border: 1px solid var(--card-border);
+      color: var(--muted-foreground);
+      white-space: nowrap;
+    }
+    .seg-group {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px;
+      border-radius: 8px;
+      background: var(--secondary);
+      border: 1px solid var(--border);
+    }
+    .seg-btn {
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 12px;
+      color: var(--muted-foreground);
+      transition: background 0.15s, color 0.15s;
+    }
+    .seg-btn.active {
+      background: var(--primary);
+      color: var(--primary-foreground);
+    }
+    .ops-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    @media (min-width: 460px) {
+      .ops-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    .ops-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: var(--content);
+      border: 1px solid var(--card-border);
+      font-size: 12px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; flex-shrink: 0; }
+    .filter-nav { display: flex; flex-wrap: wrap; gap: 6px; }
+    .filter-tab {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      color: var(--muted-foreground);
+    }
+    .filter-tab.active {
+      background: var(--secondary);
+      color: var(--foreground);
+      border-color: var(--primary);
+    }
+    .floor-box {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--background);
+      overflow: hidden;
+    }
+    .floor-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--content);
+      border-bottom: 1px solid var(--card-border);
+      font-size: 12px;
+    }
+    .floor-code {
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--secondary);
+      color: var(--foreground);
+      font-size: 11px;
+    }
+    .desks-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+      padding: 10px;
+    }
+    @media (min-width: 440px) {
+      .desks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .desk-card {
+      width: 100%;
+      text-align: left;
+      border-radius: 10px;
+      padding: 9px;
+      border: 1px solid var(--card-border);
+      background: var(--content);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .desk-card:hover { border-color: var(--border); }
+    .desk-card.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+      background: var(--secondary);
+    }
+    .desk-svg {
+      width: 92px;
+      height: 60px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: var(--background);
+      border: 1px solid var(--card-border);
+    }
+    .desk-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      color: var(--foreground);
+      flex-shrink: 0;
+    }
+    .sub-box {
+      border-radius: 8px;
+      background: var(--content);
+      border: 1px solid var(--card-border);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .feed-item {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      background: var(--content);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .feed-item.selected {
+      border-color: var(--primary);
+      background: var(--secondary);
+    }
+    .branch-box {
+      padding-left: 12px;
+      border-left: 2px solid var(--primary);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .btn-action {
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--card);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+    }
+    .btn-action.primary {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+    .hidden { display: none !important; }
+    @keyframes pulseSoft { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes screenFlicker { 0%, 100% { opacity: 0.95; } 50% { opacity: 0.65; } }
+    @keyframes steamRise { 0%, 100% { transform: translateY(0px); opacity: 0.85; } 50% { transform: translateY(-2px); opacity: 0.35; } }
+    .pulse-soft { animation: pulseSoft 1.8s ease-in-out infinite; }
+    .screen-live { animation: screenFlicker 1.4s steps(2, end) infinite; }
+    .steam-live { animation: steamRise 1.8s steps(2, end) infinite; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- 1. TOP HEADER -->
+    <header class="panel">
+      <div class="row-between">
+        <div class="row-center">
+          <span id="live-indicator" class="dot pulse-soft" style="background: var(--success);"></span>
+          <span class="title">AGY Studio</span>
+          <span id="mode-pill" class="badge mono">LIVE</span>
+        </div>
+
+        <div class="row-center" style="gap: 6px; flex-wrap: wrap;">
+          <div class="seg-group" title="Scope">
+            <button id="btn-scope-current" type="button" class="seg-btn active">This Chat</button>
+            <button id="btn-scope-all" type="button" class="seg-btn">All</button>
+          </div>
+          <div class="seg-group">
+            <button id="btn-view-studio" type="button" class="seg-btn active">Studio</button>
+            <button id="btn-view-map" type="button" class="seg-btn">Map</button>
+          </div>
+          <div class="seg-group" title="Language">
+            <button id="btn-lang-en" type="button" class="seg-btn">EN</button>
+            <button id="btn-lang-tr" type="button" class="seg-btn">TR</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Overview -->
+      <div class="ops-grid divider-top">
+        <div class="ops-box">
+          <span class="row-center muted"><span class="dot" style="background: var(--success);"></span><span id="lbl-exec">Code / Test</span></span>
+          <span id="count-exec" class="mono" style="font-weight:600;">0</span>
+        </div>
+        <div class="ops-box">
+          <span class="row-center muted"><span class="dot" style="background: var(--primary);"></span><span id="lbl-plan">Plan / Review</span></span>
+          <span id="count-plan" class="mono" style="font-weight:600;">0</span>
+        </div>
+        <div class="ops-box">
+          <span class="row-center muted"><span class="dot" style="background: var(--warning);"></span><span id="lbl-handoff">Handed off</span></span>
+          <span id="count-handoff" class="mono" style="font-weight:600;">0</span>
+        </div>
+        <div class="ops-box">
+          <span class="row-center muted"><span class="dot" style="background: var(--muted-foreground);"></span><span id="lbl-idle">Idle</span></span>
+          <span id="count-idle" class="mono" style="font-weight:600;">0</span>
+        </div>
+      </div>
+
+      <!-- Category Filters -->
+      <nav id="filter-bar" class="filter-nav divider-top">
+        <button type="button" data-filter="all" class="filter-tab active">All</button>
+        <button type="button" data-filter="orchestrator" class="filter-tab">Orchestrator</button>
+        <button type="button" data-filter="swarm" class="filter-tab">Swarm</button>
+        <button type="button" data-filter="cli" class="filter-tab">External CLI</button>
+        <button type="button" data-filter="idle" class="filter-tab">Idle</button>
+      </nav>
+    </header>
+
+    <!-- 2. MAIN STAGE -->
+    <main class="panel">
+      <div id="studio-view" style="display:flex; flex-direction:column; gap:10px;"></div>
+      <div id="map-view" class="hidden" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </main>
+
+    <!-- 3. BOTTOM PANEL -->
+    <section class="panel-flush">
+      <div class="row-between" style="padding: 8px 12px; background: var(--content); border-bottom: 1px solid var(--card-border);">
+        <div class="row-center" style="gap: 4px;">
+          <button id="tab-selected" type="button" class="seg-btn active">Selected Agent</button>
+          <button id="tab-feed" type="button" class="seg-btn">Live Feed</button>
+        </div>
+        <span id="total-tokens-badge" class="mono muted" style="font-size: 12px;">Total: —</span>
+      </div>
+
+      <!-- Tab 1: Selected Agent -->
+      <div id="panel-selected" style="padding: 12px; display:flex; flex-direction:column; gap:10px;">
+        <div class="row-between">
+          <div class="row-center">
+            <span id="insp-dot" class="dot" style="background: var(--primary);"></span>
+            <span id="insp-name" class="title truncate">-</span>
+            <span id="insp-status-badge" class="badge">-</span>
+            <span id="insp-provider" class="badge">-</span>
+          </div>
+          <div class="row-center">
+            <span class="mono muted" style="font-size: 12px;">
+              <span id="insp-tokens">—</span> · <span id="insp-elapsed">0s</span>
+            </span>
+            <button id="btn-jump-conv" type="button" class="btn-action primary hidden">Jump to Chat</button>
+          </div>
+        </div>
+
+        <div class="sub-box">
+          <div class="row-between" style="font-size: 12px;">
+            <span id="lbl-what-doing" class="muted" style="font-weight: 500;">Current activity</span>
+            <span id="insp-ownership" class="mono muted">-</span>
+          </div>
+          <div id="insp-human-summary" style="font-weight: 600; font-size: 13px;">-</div>
+          <div id="insp-tech-task" class="mono muted" style="font-size: 12px; word-break: break-all;">-</div>
+        </div>
+
+        <div class="sub-box">
+          <div id="lbl-thinking" class="muted" style="font-size: 12px; font-weight: 500;">Reasoning &amp; Context</div>
+          <div id="insp-thinking" style="font-size: 12px;">-</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div id="lbl-recent-steps" class="muted" style="font-size: 12px; font-weight: 500;">Recent steps</div>
+          <div id="insp-history" style="display:flex; flex-direction:column; gap:4px;"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Live Event Feed -->
+      <div id="panel-feed" class="hidden" style="padding: 12px; display:flex; flex-direction:column; gap:6px;">
+        <div class="row-between muted" style="font-size: 12px;">
+          <span id="lbl-feed-title">Recent actions across agents</span>
+          <span id="lbl-feed-hint">Click a row to inspect</span>
+        </div>
+        <div id="live-feed" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+    </section>
+
+    <!-- 4. DATA SOURCE & DEMO DRAWER -->
+    <details class="sub-box" style="border-style: dashed;">
+      <summary class="row-between muted" style="cursor: pointer; user-select: none; font-size: 12px; font-weight: 500;">
+        <span id="lbl-drawer-title">Data Source &amp; Demo Tools</span>
+        <span id="demo-status-label" class="mono">Live JSONL connected</span>
+      </summary>
+      <div class="row-center divider-top" style="flex-wrap: wrap; margin-top: 8px;">
+        <button id="cmd-toggle-source" type="button" class="btn-action primary">Switch to Demo</button>
+        <button id="cmd-refresh-now" type="button" class="btn-action">Refresh Now</button>
+        <button id="cmd-swarm" type="button" class="btn-action hidden">+6 Swarm Workers</button>
+      </div>
+    </details>
+
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const I18N = {
+        en: {
+          livePill: 'LIVE JSONL',
+          demoPill: 'DEMO MODE',
+          thisChat: 'This Chat',
+          allChats: 'All',
+          studio: 'Studio',
+          map: 'Map',
+          exec: 'Code / Test',
+          plan: 'Plan / Review',
+          handoff: 'Handed off',
+          idle: 'Idle',
+          fAll: 'All',
+          fOrch: 'Orchestrator',
+          fSwarm: 'Swarm',
+          fCli: 'External CLI',
+          fIdle: 'Idle',
+          tabSelected: 'Selected Agent',
+          tabFeed: 'Live Feed',
+          total: 'Total',
+          jumpChat: 'Jump to Chat',
+          whatDoing: 'Current activity',
+          thinking: 'Reasoning & Context',
+          recentSteps: 'Recent steps',
+          feedTitle: 'Recent actions across agents',
+          feedHint: 'Click a row to inspect',
+          drawerTitle: 'Data Source & Demo Tools',
+          liveConnected: 'Live JSONL connected',
+          demoActive: 'Demo simulation active',
+          toDemo: 'Switch to Demo',
+          toLive: 'Back to Live JSONL',
+          refreshNow: 'Refresh Now',
+          addSwarm: '+6 Swarm Workers',
+          removeSwarm: 'Close Extra Swarm',
+          floor4Code: 'FL 4',
+          floor4Title: 'Orchestrator Deck',
+          floor4Sub: 'Plans & delegates work to subagents',
+          floor3Code: 'FL 3',
+          floor3Title: 'Coding & Swarm Floor',
+          floor3Sub: (n) => `${n} parallel agent${n === 1 ? '' : 's'} active`,
+          floor2Code: 'FL 2',
+          floor2Title: 'External CLI Lab',
+          floor2Sub: 'Claude Code, Codex, Copilot, OpenCode, DeepSeek',
+          floor1Code: 'FL 1',
+          floor1Title: 'Coffee Lounge',
+          floor1Sub: 'Completed / idle sessions',
+          noAgentsFilter: 'No agents match this filter.',
+          noEventsFilter: 'No events for this filter.',
+          moreCompact: (n) => `+${n} more agents (compact strip)`,
+          expandDesks: 'Expand all desks',
+          collapseDesks: 'Collapse to 4 desks',
+          activeLead: 'Active Lead',
+          assignedBy: (p) => `via ${p}`,
+          rolePrefix: 'Role',
+          linkedTo: (p, r) => `Linked to ${p} · ${r}`,
+          cmdPrefix: 'Command',
+          mapChildren: (n) => `↳ Attached subagents & external CLIs (${n})`,
+          mapOther: (n) => `Other / Idle Sessions (${n})`,
+        },
+        tr: {
+          livePill: 'CANLI JSONL',
+          demoPill: 'DEMO MODU',
+          thisChat: 'Bu Sohbet',
+          allChats: 'Tümü',
+          studio: 'Stüdyo',
+          map: 'Harita',
+          exec: 'Kod / Test',
+          plan: 'Plan / İnceleme',
+          handoff: 'Devretti',
+          idle: 'Boşta',
+          fAll: 'Tümü',
+          fOrch: 'Yönetici',
+          fSwarm: 'Swarm',
+          fCli: 'Dış CLI',
+          fIdle: 'Boşta',
+          tabSelected: 'Seçili Ajan',
+          tabFeed: 'Canlı Akış',
+          total: 'Toplam',
+          jumpChat: 'Sohbete Git',
+          whatDoing: 'Şu an ne yapıyor?',
+          thinking: 'Düşünce & Bağlam Notu',
+          recentSteps: 'Bu ajanın son adımları',
+          feedTitle: 'Tüm ajanların son işlemleri',
+          feedHint: 'Satıra tıklayınca o ajana odaklanır',
+          drawerTitle: 'Veri Kaynağı & Test Araçları',
+          liveConnected: 'Canlı JSONL bağlı',
+          demoActive: 'Demo simülasyon aktif',
+          toDemo: 'Demo Simülasyona Geç',
+          toLive: 'Canlı JSONL Verisine Dön',
+          refreshNow: 'Şimdi Yenile',
+          addSwarm: '+6 Swarm Çalışanı Ekle',
+          removeSwarm: 'Ekstra Swarm\'ı Kapat',
+          floor4Code: 'KAT 4',
+          floor4Title: 'Yönetim & Planlama (Orchestrator)',
+          floor4Sub: 'Görevi analiz eder, alt ajanlara dağıtır',
+          floor3Code: 'KAT 3',
+          floor3Title: 'Kodlama & Swarm Çalışanları',
+          floor3Sub: (n) => `${n} paralel ajan aktif`,
+          floor2Code: 'KAT 2',
+          floor2Title: 'Dış CLI Uzman Laboratuvarı',
+          floor2Sub: 'Claude Code, Codex, Copilot, OpenCode, DeepSeek',
+          floor1Code: 'KAT 1',
+          floor1Title: 'Kahve & Bekleme Salonu',
+          floor1Sub: 'Tamamlanan / görev bekleyen oturumlar',
+          noAgentsFilter: 'Bu filtrede görüntülenecek ajan yok.',
+          noEventsFilter: 'Bu filtre için kayıtlı olay yok.',
+          moreCompact: (n) => `+${n} ajan daha (kompakt şerit)`,
+          expandDesks: 'Tüm masaları aç',
+          collapseDesks: 'Kompakt görünüme daralt (4 masa)',
+          activeLead: 'Aktif Lider',
+          assignedBy: (p) => `${p} görevi`,
+          rolePrefix: 'Rol',
+          linkedTo: (p, r) => `${p} bağlantılı · ${r}`,
+          cmdPrefix: 'Komut',
+          mapChildren: (n) => `↳ Bağlı alt ajanlar ve dış CLI oturumları (${n})`,
+          mapOther: (n) => `Diğer / Beklemedeki Oturumlar (${n})`,
+        },
+      };
+
+      function detectInitialLang() {
+        try {
+          const saved = localStorage.getItem('agy_studio_lang');
+          if (saved === 'en' || saved === 'tr') return saved;
+        } catch {}
+        return (navigator.language || '').toLowerCase().startsWith('tr') ? 'tr' : 'en';
+      }
+
+      const DEMO_AGENTS = [
+        { id: 'orch-argon', name: 'Argon · Lead', modelBadge: 'Gemini 4 Argon', role: 'Orchestrator', provider: 'antigravity', providerLabel: 'Antigravity', category: 'orchestrator', status: 'active', stateKind: 'plan', humanStatus: 'Planning', humanSummary: 'Architecting route guard & session mutex.', handoffNote: 'Phase 1 → 4 agents assigned', tool: 'read_file', target: 'lib/router/app_router.dart', thinking: 'Checking concurrency race conditions before handing execution to Hydrogen.', tokens: 64200, elapsedSec: 134, shirtColor: '#8b5cf6', parentId: null, parentName: null, propType: 'board', history: [{ time: '14:52:10', summary: 'Read session repository', tech: 'read_file → session_repo.dart' }] },
+        { id: 'exec-hydro', name: 'Hydrogen · Exec', modelBadge: 'Gemini 4 Hydrogen', role: 'Executor', provider: 'antigravity', providerLabel: 'Antigravity', category: 'swarm', status: 'active', stateKind: 'exec', humanStatus: 'Coding', humanSummary: 'Adding transactional refresh token lock.', tool: 'edit_file', target: 'lib/auth/session_repo.dart (+28/-4)', thinking: 'Implementing refresh mutex per Argon plan.', tokens: 29400, elapsedSec: 68, shirtColor: '#06b6d4', parentId: 'orch-argon', parentName: 'Argon', propType: 'plant', history: [] },
+        { id: 'cli-codex', name: 'OpenAI Codex CLI', modelBadge: 'gpt-6.2-sol', role: 'External CLI', provider: 'codex', providerLabel: 'Codex CLI', category: 'cli', status: 'active', stateKind: 'exec', humanStatus: 'Patching', humanSummary: 'Patching API concurrency lock.', tool: 'apply_patch', target: 'src/api/refresh_mutex.ts (+18/-4)', thinking: 'Applying workspace-write sandbox patch.', tokens: 22600, elapsedSec: 41, shirtColor: '#10b981', parentId: 'orch-argon', parentName: 'Argon', propType: 'terminal', history: [] },
+        { id: 'cli-copilot', name: 'GitHub Copilot CLI', modelBadge: 'GPT-5.6 Luna', role: 'External CLI', provider: 'copilot', providerLabel: 'Copilot CLI', category: 'cli', status: 'active', stateKind: 'plan', humanStatus: 'Reviewing', humanSummary: 'Auditing XSS & router edge cases.', tool: 'security_audit', target: 'src/routes/share_modal.ts', thinking: 'Inspecting URL parser and history hooks.', tokens: 16900, elapsedSec: 29, shirtColor: '#8b5cf6', parentId: 'orch-argon', parentName: 'Argon', propType: 'shield', history: [] },
+        { id: 'cli-opencode', name: 'OpenCode CLI', modelBadge: 'OpenCode', role: 'External CLI', provider: 'opencode', providerLabel: 'OpenCode', category: 'cli', status: 'active', stateKind: 'exec', humanStatus: 'CLI Running', humanSummary: 'Refactoring widget tests.', tool: 'opencode', target: 'test/router_test.dart', thinking: 'Running isolated test refactor.', tokens: 12100, elapsedSec: 22, shirtColor: '#ec4899', parentId: 'orch-argon', parentName: 'Argon', propType: 'terminal', history: [] },
+        { id: 'cli-deepseek', name: 'DeepSeek CLI', modelBadge: 'DeepSeek', role: 'External CLI', provider: 'deepseek', providerLabel: 'DeepSeek CLI', category: 'cli', status: 'active', stateKind: 'plan', humanStatus: 'Inspecting', humanSummary: 'Checking SQL query plan performance.', tool: 'deepseek', target: 'db/migrations.sql', thinking: 'Analyzing index coverage.', tokens: 9800, elapsedSec: 17, shirtColor: '#3b82f6', parentId: 'orch-argon', parentName: 'Argon', propType: 'notes', history: [] }
+      ];
+
+      const EXTRA_DEMO_SWARM = [
+        { id: 'sw-1', name: 'Swarm-1 · Tests', modelBadge: 'Gemini 4 Hydrogen', role: 'Swarm Worker', provider: 'antigravity', providerLabel: 'Antigravity', category: 'swarm', status: 'active', stateKind: 'exec', humanStatus: 'Testing', humanSummary: 'Running auth unit test suite (14/14).', tool: 'run_command', target: 'flutter test test/auth_test.dart', thinking: 'Verifying mutex tests.', tokens: 18700, elapsedSec: 45, shirtColor: '#14b8a6', parentId: 'orch-argon', parentName: 'Argon', propType: 'lamp', history: [] },
+        { id: 'sw-2', name: 'Swarm-2 · Verifier', modelBadge: 'Claude Sonnet 5.5', role: 'Verifier', provider: 'antigravity', providerLabel: 'Antigravity', category: 'swarm', status: 'active', stateKind: 'plan', humanStatus: 'Reviewing', humanSummary: 'Auditing null-safety boundaries.', tool: 'read_file', target: 'git diff --stat', thinking: 'Checking error recovery.', tokens: 24100, elapsedSec: 53, shirtColor: '#f97316', parentId: 'orch-argon', parentName: 'Argon', propType: 'notes', history: [] },
+        { id: 'sw-3', name: 'Swarm-3 · UI', modelBadge: 'Gemini 4 Hydrogen', role: 'Swarm Worker', provider: 'antigravity', providerLabel: 'Antigravity', category: 'swarm', status: 'active', stateKind: 'exec', humanStatus: 'Coding', humanSummary: 'Updating login error banner.', tool: 'edit_file', target: 'lib/ui/login_sheet.dart', thinking: 'Syncing expired token state.', tokens: 11200, elapsedSec: 18, shirtColor: '#06b6d4', parentId: 'orch-argon', parentName: 'Argon', propType: 'plant', history: [] },
+        { id: 'sw-4', name: 'Swarm-4 · Retry', modelBadge: 'Gemini 4 Neon', role: 'Swarm Worker', provider: 'antigravity', providerLabel: 'Antigravity', category: 'swarm', status: 'active', stateKind: 'plan', humanStatus: 'Planning', humanSummary: 'Calculating 401 backoff jitter.', tool: 'read_file', target: 'lib/core/retry_policy.dart', thinking: 'Tuning retry intervals.', tokens: 14500, elapsedSec: 21, shirtColor: '#0ea5e9', parentId: 'orch-argon', parentName: 'Argon', propType: 'notes', history: [] },
+        { id: 'sw-5', name: 'Swarm-5 · Keychain', modelBadge: 'Claude Sonnet 5.5', role: 'Swarm Worker', provider: 'antigravity', providerLabel: 'Antigravity', category: 'swarm', status: 'active', stateKind: 'plan', humanStatus: 'Reviewing', humanSummary: 'Checking iOS Keychain flags.', tool: 'read_file', target: 'lib/storage/secure_kv.dart', thinking: 'Verifying background unlock policy.', tokens: 13800, elapsedSec: 19, shirtColor: '#f97316', parentId: 'orch-argon', parentName: 'Argon', propType: 'shield', history: [] },
+        { id: 'sw-6', name: 'Swarm-6 · Analyzer', modelBadge: 'Gemini 4 Hydrogen', role: 'Swarm Worker', provider: 'antigravity', providerLabel: 'Antigravity', category: 'swarm', status: 'active', stateKind: 'exec', humanStatus: 'Testing', humanSummary: 'Running flutter analyze.', tool: 'run_command', target: 'flutter analyze --no-pub', thinking: 'Checking lint warnings.', tokens: 8900, elapsedSec: 15, shirtColor: '#14b8a6', parentId: 'orch-argon', parentName: 'Argon', propType: 'lamp', history: [] }
+      ];
+
+      const state = {
+        mode: 'live',
+        scope: 'current',
+        lang: detectInitialLang(),
+        view: 'studio',
+        filter: 'all',
+        bottomTab: 'selected',
+        leadOrchId: null,
+        selectedId: null,
+        showAllSwarmInStudio: false,
+        demoSwarmSpawned: false,
+        etag: '',
+        agents: [],
+        feed: []
+      };
+
+      const $ = (id) => document.getElementById(id);
+      const elModePill = $('mode-pill');
+      const elBtnScopeCurrent = $('btn-scope-current');
+      const elBtnScopeAll = $('btn-scope-all');
+      const elBtnStudio = $('btn-view-studio');
+      const elBtnMap = $('btn-view-map');
+      const elBtnLangEn = $('btn-lang-en');
+      const elBtnLangTr = $('btn-lang-tr');
+      const elCountExec = $('count-exec');
+      const elCountPlan = $('count-plan');
+      const elCountHandoff = $('count-handoff');
+      const elCountIdle = $('count-idle');
+      const elStudioView = $('studio-view');
+      const elMapView = $('map-view');
+      const elTabSelected = $('tab-selected');
+      const elTabFeed = $('tab-feed');
+      const elPanelSelected = $('panel-selected');
+      const elPanelFeed = $('panel-feed');
+      const elTotalTokensBadge = $('total-tokens-badge');
+      const elLiveFeed = $('live-feed');
+
+      const elInspDot = $('insp-dot');
+      const elInspName = $('insp-name');
+      const elInspStatusBadge = $('insp-status-badge');
+      const elInspProvider = $('insp-provider');
+      const elInspTokens = $('insp-tokens');
+      const elInspElapsed = $('insp-elapsed');
+      const elInspOwnership = $('insp-ownership');
+      const elInspHumanSummary = $('insp-human-summary');
+      const elInspTechTask = $('insp-tech-task');
+      const elInspThinking = $('insp-thinking');
+      const elInspHistory = $('insp-history');
+      const elBtnJumpConv = $('btn-jump-conv');
+
+      const elCmdToggleSource = $('cmd-toggle-source');
+      const elCmdRefreshNow = $('cmd-refresh-now');
+      const elCmdSwarm = $('cmd-swarm');
+      const elDemoStatusLabel = $('demo-status-label');
+
+      function t() { return I18N[state.lang] || I18N.en; }
+
+      function fmtTokens(n) {
+        if (!n || n <= 0) return '—';
+        return n >= 1000 ? (n / 1000).toFixed(1) + 'k tok' : n + ' tok';
+      }
+
+      function fmtElapsed(sec) {
+        const s = Math.max(0, Number(sec) || 0);
+        const m = Math.floor(s / 60);
+        const r = s % 60;
+        const isTr = state.lang === 'tr';
+        if (m >= 60) {
+          const h = Math.floor(m / 60);
+          return isTr ? `${h}sa ${m % 60}d` : `${h}h ${m % 60}m`;
+        }
+        if (m > 0) return isTr ? `${m}d ${String(r).padStart(2, '0')}sn` : `${m}m ${String(r).padStart(2, '0')}s`;
+        return isTr ? `${r}sn` : `${r}s`;
+      }
+
+      function stateDotVar(stateKind) {
+        if (stateKind === 'exec') return 'var(--success)';
+        if (stateKind === 'plan') return 'var(--primary)';
+        if (stateKind === 'handoff') return 'var(--warning)';
+        return 'var(--muted-foreground)';
+      }
+
+      function matchesFilter(agent, filter) {
+        if (filter === 'all') return true;
+        if (filter === 'idle') return agent.status === 'idle';
+        return agent.category === filter;
+      }
+
+      function getFilteredAgents() {
+        return state.agents.filter((a) => matchesFilter(a, state.filter));
+      }
+
+      function buildPixelWorkstationSVG(agent, isLeadOrch) {
+        const shirt = agent.shirtColor || '#38bdf8';
+        const isIdle = agent.status === 'idle';
+        const hair = agent.provider === 'codex' ? '#047857'
+          : agent.provider === 'copilot' ? '#5b21b6'
+          : agent.provider === 'claude-code' ? '#c2410c'
+          : agent.provider === 'opencode' ? '#be185d'
+          : agent.provider === 'deepseek' ? '#1d4ed8'
+          : '#334155';
+
+        const screenColor = isIdle ? '#475569'
+          : agent.stateKind === 'exec' ? '#22c55e'
+          : agent.stateKind === 'handoff' ? '#f59e0b'
+          : '#38bdf8';
+
+        let headAccessory = '';
+        if (isLeadOrch) {
+          headAccessory = `
+            <rect x="8" y="3" width="1" height="2" fill="#fbbf24"/>
+            <rect x="10" y="2" width="1" height="3" fill="#fbbf24"/>
+            <rect x="12" y="3" width="1" height="2" fill="#fbbf24"/>
+            <rect x="8" y="4" width="5" height="1" fill="#f59e0b"/>
+          `;
+        } else if (agent.provider === 'codex' || agent.provider === 'opencode') {
+          const glassCol = agent.provider === 'opencode' ? '#f472b6' : '#10b981';
+          headAccessory = `<rect x="11" y="8" width="3" height="2" fill="${glassCol}"/><rect x="10" y="8" width="1" height="1" fill="${glassCol}"/>`;
+        } else if (agent.provider === 'copilot' || agent.provider === 'deepseek') {
+          const hsCol = agent.provider === 'deepseek' ? '#60a5fa' : '#a855f7';
+          headAccessory = `<rect x="9" y="5" width="3" height="1" fill="${hsCol}"/><rect x="9" y="6" width="2" height="4" fill="${hsCol}"/>`;
+        }
+
+        let deskProp = '';
+        if (isIdle || agent.propType === 'coffee') {
+          deskProp = `
+            <rect x="31" y="13" width="3" height="3" fill="#f8fafc"/>
+            <rect x="34" y="14" width="1" height="1" fill="#cbd5e1"/>
+            <g class="steam-live">
+              <rect x="31" y="10" width="1" height="2" fill="#94a3b8"/>
+              <rect x="33" y="9" width="1" height="2" fill="#94a3b8"/>
+            </g>
+          `;
+        } else if (agent.propType === 'plant') {
+          deskProp = `
+            <rect x="32" y="14" width="3" height="2" fill="#b45309"/>
+            <rect x="32" y="12" width="1" height="2" fill="#22c55e"/>
+            <rect x="33" y="11" width="1" height="3" fill="#16a34a"/>
+            <rect x="34" y="12" width="1" height="2" fill="#22c55e"/>
+          `;
+        } else if (agent.propType === 'board') {
+          deskProp = `
+            <rect x="31" y="6" width="5" height="5" fill="#1e293b"/>
+            <rect x="32" y="7" width="3" height="3" fill="#38bdf8"/>
+            <rect x="32" y="8" width="2" height="1" fill="#f8fafc"/>
+          `;
+        } else {
+          deskProp = `
+            <rect x="32" y="13" width="3" height="3" fill="#64748b"/>
+            <rect x="33" y="14" width="1" height="1" fill="${screenColor}"/>
+          `;
+        }
+
+        return `
+          <svg viewBox="0 0 38 24" class="desk-svg" shape-rendering="crispEdges" aria-hidden="true">
+            <rect x="0" y="22" width="38" height="2" fill="#1e293b" opacity="0.35"/>
+            <rect x="4" y="10" width="2" height="8" fill="#475569"/>
+            <rect x="5" y="17" width="6" height="2" fill="#475569"/>
+            <rect x="7" y="19" width="2" height="3" fill="#334155"/>
+            <rect x="5" y="21" width="6" height="1" fill="#334155"/>
+            <rect x="7" y="5" width="6" height="3" fill="${hair}"/>
+            <rect x="7" y="7" width="2" height="3" fill="${hair}"/>
+            <rect x="9" y="7" width="4" height="4" fill="#f1c27d"/>
+            <rect x="12" y="8" width="1" height="1" fill="#0f172a"/>
+            ${headAccessory}
+            <rect x="7" y="11" width="6" height="6" fill="${shirt}"/>
+            <rect x="12" y="13" width="4" height="2" fill="${shirt}"/>
+            <rect x="16" y="14" width="2" height="1" fill="#f1c27d"/>
+            <rect x="9" y="17" width="4" height="2" fill="#1e293b"/>
+            <rect x="11" y="19" width="2" height="3" fill="#1e293b"/>
+            <rect x="15" y="16" width="21" height="2" fill="#8b5e3c"/>
+            <rect x="17" y="18" width="2" height="4" fill="#5c3d24"/>
+            <rect x="33" y="18" width="2" height="4" fill="#5c3d24"/>
+            <rect x="17" y="15" width="4" height="1" fill="#94a3b8"/>
+            <rect x="22" y="7" width="8" height="7" fill="#334155"/>
+            <rect x="23" y="8" width="6" height="5" fill="${screenColor}" class="${isIdle ? '' : 'screen-live'}"/>
+            <rect x="24" y="9" width="4" height="1" fill="#f8fafc" opacity="0.85"/>
+            <rect x="24" y="11" width="3" height="1" fill="#f8fafc" opacity="0.7"/>
+            <rect x="25" y="14" width="2" height="2" fill="#475569"/>
+            <rect x="24" y="15" width="4" height="1" fill="#64748b"/>
+            ${deskProp}
+          </svg>
+        `;
+      }
+
+      function renderHeader() {
+        const d = t();
+        document.documentElement.lang = state.lang;
+
+        const execCount = state.agents.filter((a) => a.stateKind === 'exec').length;
+        const planCount = state.agents.filter((a) => a.stateKind === 'plan').length;
+        const handoffCount = state.agents.filter((a) => a.stateKind === 'handoff').length;
+        const idleCount = state.agents.filter((a) => a.stateKind === 'idle').length;
+        const totalTok = state.agents.reduce((s, a) => s + (a.tokens || 0), 0);
+
+        elCountExec.textContent = String(execCount);
+        elCountPlan.textContent = String(planCount);
+        elCountHandoff.textContent = String(handoffCount);
+        elCountIdle.textContent = String(idleCount);
+        elTotalTokensBadge.textContent = `${d.total}: ${fmtTokens(totalTok)}`;
+        elModePill.textContent = state.mode === 'live' ? d.livePill : d.demoPill;
+
+        $('lbl-exec').textContent = d.exec;
+        $('lbl-plan').textContent = d.plan;
+        $('lbl-handoff').textContent = d.handoff;
+        $('lbl-idle').textContent = d.idle;
+        $('lbl-what-doing').textContent = d.whatDoing;
+        $('lbl-thinking').textContent = d.thinking;
+        $('lbl-recent-steps').textContent = d.recentSteps;
+        $('lbl-feed-title').textContent = d.feedTitle;
+        $('lbl-feed-hint').textContent = d.feedHint;
+        $('lbl-drawer-title').textContent = d.drawerTitle;
+        elBtnJumpConv.textContent = d.jumpChat;
+
+        elBtnScopeCurrent.textContent = d.thisChat;
+        elBtnScopeAll.textContent = d.allChats;
+        elBtnStudio.textContent = d.studio;
+        elBtnMap.textContent = d.map;
+
+        elBtnScopeCurrent.className = `seg-btn ${state.scope === 'current' ? 'active' : ''}`;
+        elBtnScopeAll.className = `seg-btn ${state.scope === 'all' ? 'active' : ''}`;
+        elBtnStudio.className = `seg-btn ${state.view === 'studio' ? 'active' : ''}`;
+        elBtnMap.className = `seg-btn ${state.view === 'map' ? 'active' : ''}`;
+        elBtnLangEn.className = `seg-btn ${state.lang === 'en' ? 'active' : ''}`;
+        elBtnLangTr.className = `seg-btn ${state.lang === 'tr' ? 'active' : ''}`;
+
+        elStudioView.classList.toggle('hidden', state.view !== 'studio');
+        elMapView.classList.toggle('hidden', state.view !== 'map');
+
+        const counts = {
+          all: state.agents.length,
+          orchestrator: state.agents.filter((a) => a.category === 'orchestrator').length,
+          swarm: state.agents.filter((a) => a.category === 'swarm').length,
+          cli: state.agents.filter((a) => a.category === 'cli').length,
+          idle: state.agents.filter((a) => a.status === 'idle').length
+        };
+        const labels = {
+          all: `${d.fAll} (${counts.all})`,
+          orchestrator: `${d.fOrch} (${counts.orchestrator})`,
+          swarm: `${d.fSwarm} (${counts.swarm})`,
+          cli: `${d.fCli} (${counts.cli})`,
+          idle: `${d.fIdle} (${counts.idle})`
+        };
+
+        document.querySelectorAll('.filter-tab').forEach((btn) => {
+          const f = btn.dataset.filter;
+          btn.textContent = labels[f];
+          btn.className = `filter-tab ${state.filter === f ? 'active' : ''}`;
+        });
+
+        const visibleFeed = getVisibleFeedItems();
+        elTabSelected.textContent = d.tabSelected;
+        elTabFeed.textContent = `${d.tabFeed} (${visibleFeed.length})`;
+        elTabSelected.className = `seg-btn ${state.bottomTab === 'selected' ? 'active' : ''}`;
+        elTabFeed.className = `seg-btn ${state.bottomTab === 'feed' ? 'active' : ''}`;
+        elPanelSelected.classList.toggle('hidden', state.bottomTab !== 'selected');
+        elPanelFeed.classList.toggle('hidden', state.bottomTab !== 'feed');
+
+        elCmdToggleSource.textContent = state.mode === 'live' ? d.toDemo : d.toLive;
+        elCmdRefreshNow.textContent = d.refreshNow;
+        elCmdSwarm.classList.toggle('hidden', state.mode !== 'demo');
+        elCmdSwarm.textContent = state.demoSwarmSpawned ? d.removeSwarm : d.addSwarm;
+        elDemoStatusLabel.textContent = state.mode === 'live' ? d.liveConnected : d.demoActive;
+      }
+
+      function renderWorkstationButton(agent) {
+        const d = t();
+        const isSel = state.selectedId === agent.id;
+        const isLeadOrch = state.leadOrchId === agent.id;
+        const dotColor = stateDotVar(agent.stateKind);
+        const ownerTag = agent.parentName ? d.assignedBy(agent.parentName) : (isLeadOrch ? d.activeLead : agent.role);
+
+        return `
+          <button type="button" data-agent-id="${agent.id}" class="desk-card ${isSel ? 'selected' : ''}">
+            ${buildPixelWorkstationSVG(agent, isLeadOrch)}
+            <div class="desk-body">
+              <div class="row-between" style="flex-wrap:nowrap;">
+                <span class="truncate" style="font-weight:600; font-size:12px;">${agent.name}</span>
+                <span class="status-pill">
+                  <span class="dot" style="width:6px; height:6px; background:${dotColor};"></span>${agent.humanStatus}
+                </span>
+              </div>
+              <div class="truncate" style="font-size:12px;">${agent.humanSummary}</div>
+              <div class="row-between mono muted" style="font-size:11px; flex-wrap:nowrap;">
+                <span class="truncate">${agent.modelBadge}</span>
+                <span style="flex-shrink:0;">${ownerTag}</span>
+              </div>
+            </div>
+          </button>
+        `;
+      }
+
+      function renderStudioView() {
+        const d = t();
+        const visible = getFilteredAgents();
+        const orchs = visible.filter((a) => a.category === 'orchestrator' && a.status === 'active');
+        const swarms = visible.filter((a) => a.category === 'swarm' && a.status === 'active');
+        const clis = visible.filter((a) => a.category === 'cli');
+        const idles = visible.filter((a) => a.status === 'idle' && a.category !== 'cli');
+
+        const floors = [];
+        if (orchs.length > 0) floors.push({ code: d.floor4Code, title: d.floor4Title, subtitle: d.floor4Sub, agents: orchs, collapsible: false });
+        if (swarms.length > 0) floors.push({ code: d.floor3Code, title: d.floor3Title, subtitle: d.floor3Sub(swarms.length), agents: swarms, collapsible: true });
+        if (clis.length > 0) floors.push({ code: d.floor2Code, title: d.floor2Title, subtitle: d.floor2Sub, agents: clis, collapsible: false });
+        if (idles.length > 0) floors.push({ code: d.floor1Code, title: d.floor1Title, subtitle: d.floor1Sub, agents: idles, collapsible: true });
+
+        if (floors.length === 0) {
+          elStudioView.innerHTML = `<div class="muted" style="text-align:center; padding: 24px 0;">${d.noAgentsFilter}</div>`;
+          return;
+        }
+
+        elStudioView.innerHTML = floors.map((fl) => {
+          const hasOverflow = fl.collapsible && fl.agents.length > 4;
+          const deskAgents = (hasOverflow && !state.showAllSwarmInStudio) ? fl.agents.slice(0, 4) : fl.agents;
+          const hiddenAgents = (hasOverflow && !state.showAllSwarmInStudio) ? fl.agents.slice(4) : [];
+
+          let overflowHtml = '';
+          if (hasOverflow) {
+            if (!state.showAllSwarmInStudio) {
+              const compactPills = hiddenAgents.map((a) => `
+                <button type="button" data-agent-id="${a.id}" class="desk-btn status-pill" style="padding:3px 8px;">
+                  <span class="dot" style="width:6px; height:6px; background:${stateDotVar(a.stateKind)};"></span>
+                  <span>${a.name}</span>
+                  <span class="muted">· ${a.humanStatus}</span>
+                </button>
+              `).join('');
+
+              overflowHtml = `
+                <div style="padding: 0 10px 10px;">
+                  <div class="divider-top" style="display:flex; flex-direction:column; gap:6px;">
+                    <div class="row-between" style="font-size:12px;">
+                      <span class="muted">${d.moreCompact(hiddenAgents.length)}</span>
+                      <button type="button" class="btn-toggle-swarm-expand" style="color:var(--primary); font-weight:500;">${d.expandDesks}</button>
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;">${compactPills}</div>
+                  </div>
+                </div>
+              `;
+            } else {
+              overflowHtml = `
+                <div style="padding: 0 10px 10px; text-align:right;">
+                  <button type="button" class="btn-toggle-swarm-expand" style="color:var(--primary); font-weight:500;">${d.collapseDesks}</button>
+                </div>
+              `;
+            }
+          }
+
+          return `
+            <div class="floor-box">
+              <div class="floor-head">
+                <div class="row-center">
+                  <span class="floor-code mono">${fl.code}</span>
+                  <span style="font-weight:600;">${fl.title}</span>
+                </div>
+                <span class="muted">${fl.subtitle}</span>
+              </div>
+              <div class="desks-grid">
+                ${deskAgents.map(renderWorkstationButton).join('')}
+              </div>
+              ${overflowHtml}
+            </div>
+          `;
+        }).join('');
+
+        bindAgentClicks(elStudioView);
+        elStudioView.querySelectorAll('.btn-toggle-swarm-expand').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            state.showAllSwarmInStudio = !state.showAllSwarmInStudio;
+            renderStudioView();
+          });
+        });
+      }
+
+      function renderMapView() {
+        const d = t();
+        const visible = getFilteredAgents();
+        const allOrchs = state.agents.filter((a) => a.category === 'orchestrator');
+
+        const groupsHtml = allOrchs.map((orch) => {
+          const children = visible.filter((a) => a.parentId === orch.id);
+          const showOrch = matchesFilter(orch, state.filter) || children.length > 0;
+          if (!showOrch) return '';
+
+          const isOrchSel = state.selectedId === orch.id;
+          const isLead = state.leadOrchId === orch.id;
+          const orchDot = stateDotVar(orch.stateKind);
+
+          const childrenCards = children.map((ch) => {
+            const isSel = state.selectedId === ch.id;
+            const cDot = stateDotVar(ch.stateKind);
+            return `
+              <button type="button" data-agent-id="${ch.id}" class="desk-card ${isSel ? 'selected' : ''}" style="flex-direction:column; align-items:stretch; gap:4px;">
+                <div class="row-between">
+                  <span class="truncate" style="font-weight:600;">${ch.name}</span>
+                  <span class="status-pill"><span class="dot" style="width:6px; height:6px; background:${cDot};"></span>${ch.humanStatus}</span>
+                </div>
+                <div class="truncate">${ch.humanSummary}</div>
+                <div class="row-between mono muted divider-top" style="font-size:11px;">
+                  <span class="truncate">${ch.tool} → ${ch.target}</span>
+                  <span>${fmtTokens(ch.tokens)}</span>
+                </div>
+              </button>
+            `;
+          }).join('');
+
+          return `
+            <div class="sub-box" style="gap:10px;">
+              <button type="button" data-agent-id="${orch.id}" class="desk-card ${isOrchSel ? 'selected' : ''}" style="justify-content:space-between;">
+                <div style="min-width:0; display:flex; flex-direction:column; gap:3px;">
+                  <div class="row-center">
+                    <span class="dot" style="background:${orchDot};"></span>
+                    <span class="title">${orch.name}</span>
+                    <span class="badge">${isLead ? d.activeLead : orch.role}</span>
+                  </div>
+                  <div>${orch.humanSummary}</div>
+                  <div class="mono muted" style="font-size:11.5px;">${orch.handoffNote || ''}</div>
+                </div>
+                <div style="text-align:right; flex-shrink:0;">
+                  <div class="status-pill">${orch.humanStatus}</div>
+                  <div class="mono muted" style="margin-top:4px; font-size:11.5px;">${fmtTokens(orch.tokens)}</div>
+                </div>
+              </button>
+              ${children.length > 0 ? `
+                <div class="branch-box">
+                  <div class="muted" style="font-size:12px;">${d.mapChildren(children.length)}</div>
+                  <div class="desks-grid" style="padding:0;">${childrenCards}</div>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+
+        const orchIdSet = new Set(allOrchs.map((o) => o.id));
+        const unassigned = visible.filter((a) => a.category !== 'orchestrator' && (!a.parentId || !orchIdSet.has(a.parentId)));
+        let idleHtml = '';
+        if (unassigned.length > 0) {
+          idleHtml = `
+            <div class="sub-box" style="gap:8px;">
+              <div class="muted" style="font-weight:600;">${d.mapOther(unassigned.length)}</div>
+              <div class="desks-grid" style="padding:0;">
+                ${unassigned.map((u) => `
+                  <button type="button" data-agent-id="${u.id}" class="desk-card ${state.selectedId === u.id ? 'selected' : ''}" style="flex-direction:column; align-items:stretch; gap:4px;">
+                    <div class="row-between">
+                      <span class="truncate" style="font-weight:600;">${u.name}</span>
+                      <span class="muted">${u.humanStatus}</span>
+                    </div>
+                    <div class="muted truncate">${u.humanSummary}</div>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        elMapView.innerHTML = (groupsHtml + idleHtml) || `<div class="muted" style="text-align:center; padding:24px 0;">${d.noAgentsFilter}</div>`;
+        bindAgentClicks(elMapView);
+      }
+
+      function bindAgentClicks(container) {
+        container.querySelectorAll('[data-agent-id]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            state.selectedId = btn.dataset.agentId;
+            renderAll();
+          });
+        });
+      }
+
+      function getVisibleFeedItems() {
+        const visibleIds = new Set(getFilteredAgents().map((a) => a.id));
+        return state.feed.filter((f) => visibleIds.has(f.agentId)).slice(0, 8);
+      }
+
+      function renderInspector() {
+        const d = t();
+        let agent = state.agents.find((a) => a.id === state.selectedId);
+        if (!agent) {
+          agent = state.agents[0];
+          if (agent) state.selectedId = agent.id;
+        }
+        if (!agent) return;
+
+        elInspDot.style.background = stateDotVar(agent.stateKind);
+        elInspName.textContent = `${agent.name} (${agent.modelBadge})`;
+        elInspStatusBadge.textContent = agent.humanStatus;
+        elInspProvider.textContent = agent.providerLabel;
+        elInspTokens.textContent = fmtTokens(agent.tokens);
+        elInspElapsed.textContent = fmtElapsed(agent.elapsedSec);
+        elInspOwnership.textContent = agent.parentName
+          ? d.linkedTo(agent.parentName, agent.role)
+          : `${d.rolePrefix}: ${agent.role}`;
+        elInspHumanSummary.textContent = agent.humanSummary;
+        elInspTechTask.textContent = `${d.cmdPrefix}: ${agent.tool} → ${agent.target}`;
+        elInspThinking.textContent = agent.thinking;
+
+        const canJump = Boolean(agent.conversationId && window.sidecar?.ui?.toggleConversation);
+        elBtnJumpConv.classList.toggle('hidden', !canJump);
+        elBtnJumpConv.onclick = () => {
+          if (agent.conversationId && window.sidecar?.ui?.toggleConversation) {
+            window.sidecar.ui.toggleConversation(agent.conversationId);
+          }
+        };
+
+        elInspHistory.innerHTML = (agent.history || []).slice().reverse().slice(0, 3).map((h) => `
+          <div class="row-between sub-box" style="padding: 6px 8px; flex-direction:row;">
+            <span class="truncate">${h.summary} <span class="mono muted">(${h.tech || ''})</span></span>
+            <span class="mono muted" style="flex-shrink:0;">${h.time}</span>
+          </div>
+        `).join('');
+      }
+
+      function renderFeed() {
+        const d = t();
+        const items = getVisibleFeedItems();
+        if (items.length === 0) {
+          elLiveFeed.innerHTML = `<div class="muted" style="padding:8px 0;">${d.noEventsFilter}</div>`;
+          return;
+        }
+        elLiveFeed.innerHTML = items.map((item) => {
+          const isSel = item.agentId === state.selectedId;
+          const dotColor = stateDotVar(item.stateKind);
+          return `
+            <button type="button" data-agent-id="${item.agentId}" class="feed-item ${isSel ? 'selected' : ''}">
+              <div class="row-between">
+                <span class="row-center" style="font-weight:600;">
+                  <span class="dot" style="background:${dotColor};"></span>${item.agentName}
+                </span>
+                <span class="mono muted">${item.time}</span>
+              </div>
+              <div class="truncate">${item.summary}</div>
+              <div class="mono muted truncate" style="font-size:11.5px;">${item.tech || ''}</div>
+            </button>
+          `;
+        }).join('');
+
+        elLiveFeed.querySelectorAll('[data-agent-id]').forEach((el) => {
+          el.addEventListener('click', () => {
+            state.bottomTab = 'selected';
+            state.selectedId = el.dataset.agentId;
+            renderAll();
+          });
+        });
+      }
+
+      function renderAll() {
+        renderHeader();
+        if (state.view === 'studio') renderStudioView();
+        else renderMapView();
+        renderInspector();
+        renderFeed();
+      }
+
+      async function pollLiveState(force) {
+        if (state.mode !== 'live') return;
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const convId = params.get('conversationId') || '';
+          const token = params.get('token') || '';
+          const qs = new URLSearchParams();
+          qs.set('scope', state.scope);
+          qs.set('lang', state.lang);
+          if (convId) qs.set('conversationId', convId);
+          if (token) qs.set('token', token);
+          if (!force && state.etag) qs.set('etag', state.etag);
+
+          const headers = {};
+          if (token) headers['x-sidecar-token'] = token;
+
+          const res = await fetch(`/api/state?${qs.toString()}`, { cache: 'no-store', headers });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.unchanged) return;
+
+          state.etag = data.etag || '';
+          state.leadOrchId = data.leadOrchId || null;
+          state.agents = Array.isArray(data.agents) ? data.agents : [];
+          state.feed = Array.isArray(data.feed) ? data.feed : [];
+          if (!state.selectedId || !state.agents.some((a) => a.id === state.selectedId)) {
+            state.selectedId = state.leadOrchId || (state.agents[0]?.id ?? null);
+          }
+          renderAll();
+        } catch {}
+      }
+
+      function loadDemoMode() {
+        state.mode = 'demo';
+        state.leadOrchId = 'orch-argon';
+        state.agents = DEMO_AGENTS.map((a) => ({ ...a, history: [...a.history] }));
+        if (state.demoSwarmSpawned) {
+          EXTRA_DEMO_SWARM.forEach((s) => state.agents.push({ ...s }));
+        }
+        state.feed = [
+          { time: '14:52:27', agentId: 'cli-copilot', agentName: 'GitHub Copilot CLI', stateKind: 'plan', summary: 'Auditing XSS & router edge cases', tech: 'security_audit → share_modal.ts' },
+          { time: '14:52:25', agentId: 'cli-codex', agentName: 'OpenAI Codex CLI', stateKind: 'exec', summary: 'Patching API concurrency lock', tech: 'apply_patch → refresh_mutex.ts' },
+          { time: '14:52:18', agentId: 'cli-opencode', agentName: 'OpenCode CLI', stateKind: 'exec', summary: 'Refactoring widget tests', tech: 'opencode → router_test.dart' },
+          { time: '14:52:12', agentId: 'exec-hydro', agentName: 'Hydrogen · Exec', stateKind: 'exec', summary: 'Adding transactional refresh token lock', tech: 'edit_file → session_repo.dart' }
+        ];
+        state.selectedId = 'orch-argon';
+        renderAll();
+      }
+
+      function setLang(nextLang) {
+        if (state.lang === nextLang) return;
+        state.lang = nextLang;
+        try { localStorage.setItem('agy_studio_lang', nextLang); } catch {}
+        state.etag = '';
+        renderAll();
+        if (state.mode === 'live') pollLiveState(true);
+      }
+
+      elBtnLangEn.addEventListener('click', () => setLang('en'));
+      elBtnLangTr.addEventListener('click', () => setLang('tr'));
+
+      elBtnScopeCurrent.addEventListener('click', () => {
+        if (state.scope === 'current') return;
+        state.scope = 'current';
+        state.etag = '';
+        state.selectedId = null;
+        renderHeader();
+        if (state.mode === 'live') pollLiveState(true);
+      });
+      elBtnScopeAll.addEventListener('click', () => {
+        if (state.scope === 'all') return;
+        state.scope = 'all';
+        state.etag = '';
+        renderHeader();
+        if (state.mode === 'live') pollLiveState(true);
+      });
+      elBtnStudio.addEventListener('click', () => { state.view = 'studio'; renderAll(); });
+      elBtnMap.addEventListener('click', () => { state.view = 'map'; renderAll(); });
+      elTabSelected.addEventListener('click', () => { state.bottomTab = 'selected'; renderHeader(); });
+      elTabFeed.addEventListener('click', () => { state.bottomTab = 'feed'; renderHeader(); });
+
+      document.querySelectorAll('.filter-tab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.filter = btn.dataset.filter;
+          renderAll();
+        });
+      });
+
+      elCmdToggleSource.addEventListener('click', () => {
+        if (state.mode === 'live') loadDemoMode();
+        else {
+          state.mode = 'live';
+          state.etag = '';
+          pollLiveState(true);
+        }
+      });
+
+      elCmdRefreshNow.addEventListener('click', () => {
+        if (state.mode === 'live') pollLiveState(true);
+        else renderAll();
+      });
+
+      elCmdSwarm.addEventListener('click', () => {
+        if (state.mode !== 'demo') return;
+        state.demoSwarmSpawned = !state.demoSwarmSpawned;
+        loadDemoMode();
+      });
+
+      setInterval(() => pollLiveState(false), 1800);
+      pollLiveState(true);
+    })();
+  </script>
+</body>
+</html>

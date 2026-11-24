@@ -1,0 +1,22 @@
+{
+  "name": "agy-studio",
+  "displayName": "AGY Studio",
+  "version": "1.0.0",
+  "description": "Live pixel-art office & multi-agent monitor sidecar for Google Antigravity — tracks Orchestrator (Argon/Neon), Swarm workers, Claude Code, OpenAI Codex CLI, GitHub Copilot CLI, OpenCode, and DeepSeek CLI in real time.",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "Yaraill",
+    "url": "https://github.com/Yaraill"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Yaraill/agy-studio"
+  },
+  "homepage": "https://github.com/Yaraill/agy-studio",
+  "license": "MIT",
+  "suggestedPrompts": [
+    "Open AGY Studio side panel",
+    "Show all running agents and external CLI subagents",
+    "Inspect active Orchestrator and Swarm workers"
+  ]
+}
