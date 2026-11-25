@@ -242,6 +242,106 @@
     .pulse-soft { animation: pulseSoft 1.8s ease-in-out infinite; }
     .screen-live { animation: screenFlicker 1.4s steps(2, end) infinite; }
     .steam-live { animation: steamRise 1.8s steps(2, end) infinite; }
+    .ctx-pill-btn {
+      font-size: 11.5px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--content);
+      border: 1px solid var(--card-border);
+      color: var(--foreground);
+      font-weight: 600;
+      transition: border-color 0.15s;
+    }
+    .ctx-pill-btn:hover { border-color: var(--primary); }
+    .ctx-bar-track {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--secondary);
+      overflow: hidden;
+    }
+    .ctx-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+    .ctx-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    @media (min-width: 440px) {
+      .ctx-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    .ctx-metric-card {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--content);
+      border: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: border-color 0.15s;
+    }
+    .ctx-metric-card[data-tip] { cursor: help; }
+    .ctx-metric-card[data-tip]:hover { border-color: var(--primary); }
+    .has-tip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: help;
+    }
+    .tip-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 13px;
+      height: 13px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--muted-foreground);
+      opacity: 0.85;
+      flex-shrink: 0;
+    }
+    .has-tip:hover .tip-icon,
+    .ctx-metric-card:hover .tip-icon {
+      border-color: var(--primary);
+      color: var(--primary);
+      opacity: 1;
+    }
+    .agy-tooltip {
+      position: fixed;
+      z-index: 9999;
+      max-width: 248px;
+      padding: 6px 9px;
+      border-radius: 7px;
+      background: var(--card);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+      font-size: 11.5px;
+      line-height: 1.4;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(3px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+    .agy-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .ctx-spike-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      background: var(--content);
+      border: 1px solid var(--card-border);
+    }
   </style>
 </head>
 <body>
@@ -254,6 +354,7 @@
           <span id="live-indicator" class="dot pulse-soft" style="background: var(--success);"></span>
           <span class="title">AGY Studio</span>
           <span id="mode-pill" class="badge mono">LIVE</span>
+          <button id="ctx-pill" type="button" class="ctx-pill-btn mono hidden">Ctx —</button>
         </div>
 
         <div class="row-center" style="gap: 6px; flex-wrap: wrap;">
@@ -264,6 +365,7 @@
           <div class="seg-group">
             <button id="btn-view-studio" type="button" class="seg-btn active">Studio</button>
             <button id="btn-view-map" type="button" class="seg-btn">Map</button>
+            <button id="btn-view-context" type="button" class="seg-btn">Context</button>
           </div>
           <div class="seg-group" title="Language">
             <button id="btn-lang-en" type="button" class="seg-btn">EN</button>
@@ -306,6 +408,7 @@
     <main class="panel">
       <div id="studio-view" style="display:flex; flex-direction:column; gap:10px;"></div>
       <div id="map-view" class="hidden" style="display:flex; flex-direction:column; gap:10px;"></div>
+      <div id="context-view" class="hidden" style="display:flex; flex-direction:column; gap:10px;"></div>
     </main>
 
     <!-- 3. BOTTOM PANEL -->
@@ -442,6 +545,27 @@
           cmdPrefix: 'Command',
           mapChildren: (n) => `↳ Attached subagents & external CLIs (${n})`,
           mapOther: (n) => `Other / Idle Sessions (${n})`,
+          contextTab: 'Context',
+          ctxTitle: 'Context Window',
+          ctxNoData: 'No Antigravity context telemetry available yet.',
+          ctxCacheHit: 'Cache Hit',
+          ctxCacheRead: 'Cache Read',
+          ctxFreshIn: 'Fresh Input',
+          ctxLastOut: 'Last Output',
+          ctxTimeline: 'Context Growth Timeline',
+          ctxTurns: (n) => `${n} turns`,
+          ctxTopSpikes: 'Top Context Spikes',
+          ctxNoSpikes: 'No major context spikes recorded in recent steps.',
+          ctxCompactWarn: 'High context usage — consider running /compact',
+          ctxCompactCrit: 'Near context limit — /compact recommended now',
+          ctxTipPill: 'Active context window usage — click to inspect details.',
+          ctxTipWindow: 'Active conversation memory sent to the model. Grows with messages & file reads; /compact frees space.',
+          ctxTipCacheHit: 'Share of conversation history served from cache instead of re-processing. Higher means faster replies & lower quota use.',
+          ctxTipCacheRead: 'Tokens read directly from server cache in the latest turn.',
+          ctxTipFreshIn: 'Brand-new tokens added in this turn (your latest message + new tool outputs).',
+          ctxTipLastOut: 'Tokens generated by the model in the latest step (reply, reasoning & tool calls).',
+          ctxTipTimeline: 'Step-by-step memory growth. Steep jumps mean large file reads/outputs; sharp drops mean /compact.',
+          ctxTipSpikes: 'Single steps that grew the context window the most (+k tokens).',
         },
         tr: {
           livePill: 'CANLI JSONL',
@@ -500,6 +624,27 @@
           cmdPrefix: 'Komut',
           mapChildren: (n) => `↳ Bağlı alt ajanlar ve dış CLI oturumları (${n})`,
           mapOther: (n) => `Diğer / Beklemedeki Oturumlar (${n})`,
+          contextTab: 'Context',
+          ctxTitle: 'Context Penceresi',
+          ctxNoData: 'Henüz Antigravity context verisi bulunamadı.',
+          ctxCacheHit: 'Cache İsabet',
+          ctxCacheRead: 'Cache Okuma',
+          ctxFreshIn: 'Yeni Girdi',
+          ctxLastOut: 'Son Çıktı',
+          ctxTimeline: 'Context Büyüme Grafiği',
+          ctxTurns: (n) => `${n} adım`,
+          ctxTopSpikes: 'En Çok Token Büyüten Adımlar',
+          ctxNoSpikes: 'Son adımlarda belirgin bir context sıçraması yok.',
+          ctxCompactWarn: 'Bağlam doluyor — /compact çalıştırmayı düşünebilirsin',
+          ctxCompactCrit: 'Bağlam sınırına yakın — şimdi /compact önerilir',
+          ctxTipPill: 'Aktif context penceresi doluluğu — detayları açmak için tıkla.',
+          ctxTipWindow: 'Modelin şu an aklında tuttuğu aktif sohbet hafızası. Mesaj ve dosya okumalarıyla büyür; /compact ile boşaltılır.',
+          ctxTipCacheHit: 'Sohbet geçmişinin yeniden işlenmeden önbellekten okunan oranı. Yüksek olması daha hızlı yanıt ve daha az kota kullanımı demektir.',
+          ctxTipCacheRead: 'Son adımda sunucu önbelleğinden hazır okunan geçmiş token miktarı.',
+          ctxTipFreshIn: 'Bu turda sohbete yeni eklenen token miktarı (son mesajın + yeni araç/dosya çıktıları).',
+          ctxTipLastOut: 'Modelin son adımda ürettiği toplam token (yanıt, düşünme ve araç çağrıları).',
+          ctxTipTimeline: 'Adım adım hafıza büyüme eğrisi. Ani yükseliş büyük dosya/çıktı okumasını, sert düşüş /compact yapıldığını gösterir.',
+          ctxTipSpikes: 'Context hafızasını tek seferde en çok büyüten adımlar (+k token).',
         },
       };
 
@@ -512,7 +657,7 @@
       }
 
       const DEMO_AGENTS = [
-        { id: 'orch-argon', name: 'Argon · Lead', modelBadge: 'Gemini 4 Argon', role: 'Orchestrator', provider: 'antigravity', providerLabel: 'Antigravity', category: 'orchestrator', status: 'active', stateKind: 'plan', humanStatus: 'Planning', humanSummary: 'Architecting route guard & session mutex.', handoffNote: 'Phase 1 → 4 agents assigned', tool: 'read_file', target: 'lib/router/app_router.dart', thinking: 'Checking concurrency race conditions before handing execution to Hydrogen.', tokens: 64200, elapsedSec: 134, shirtColor: '#8b5cf6', parentId: null, parentName: null, propType: 'board', history: [{ time: '14:52:10', summary: 'Read session repository', tech: 'read_file → session_repo.dart' }] },
+        { id: 'orch-argon', name: 'Argon · Lead', modelBadge: 'Gemini 4 Argon', role: 'Orchestrator', provider: 'antigravity', providerLabel: 'Antigravity', category: 'orchestrator', status: 'active', stateKind: 'plan', humanStatus: 'Planning', humanSummary: 'Architecting route guard & session mutex.', handoffNote: 'Phase 1 → 4 agents assigned', tool: 'read_file', target: 'lib/router/app_router.dart', thinking: 'Checking concurrency race conditions before handing execution to Hydrogen.', tokens: 64200, elapsedSec: 134, shirtColor: '#8b5cf6', parentId: null, parentName: null, propType: 'board', history: [{ time: '14:52:10', summary: 'Read session repository', tech: 'read_file → session_repo.dart' }], contextWindow: { used: 178400, limit: 1000000, percent: 17.8, lastInput: 4120, lastCacheRead: 173100, lastOutput: 1180, cacheHitRate: 97.7, totalTurns: 12, timeline: [{ step: 1, time: '14:40:00', used: 38200 }, { step: 3, time: '14:42:10', used: 62500 }, { step: 5, time: '14:44:22', used: 89100 }, { step: 7, time: '14:46:40', used: 118400 }, { step: 9, time: '14:49:12', used: 149200 }, { step: 11, time: '14:51:30', used: 164800 }, { step: 12, time: '14:52:10', used: 178400 }], topSpikes: [{ delta: 29300, tool: 'read_file', label: 'read_file → lib/router/app_router.dart', time: '14:46:40' }, { delta: 26600, tool: 'run_command', label: 'run_command → flutter test', time: '14:44:22' }, { delta: 15600, tool: 'read_file', label: 'read_file → lib/auth/session_repo.dart', time: '14:51:30' }] } },
         { id: 'exec-hydro', name: 'Hydrogen · Exec', modelBadge: 'Gemini 4 Hydrogen', role: 'Executor', provider: 'antigravity', providerLabel: 'Antigravity', category: 'swarm', status: 'active', stateKind: 'exec', humanStatus: 'Coding', humanSummary: 'Adding transactional refresh token lock.', tool: 'edit_file', target: 'lib/auth/session_repo.dart (+28/-4)', thinking: 'Implementing refresh mutex per Argon plan.', tokens: 29400, elapsedSec: 68, shirtColor: '#06b6d4', parentId: 'orch-argon', parentName: 'Argon', propType: 'plant', history: [] },
         { id: 'cli-codex', name: 'OpenAI Codex CLI', modelBadge: 'gpt-6.2-sol', role: 'External CLI', provider: 'codex', providerLabel: 'Codex CLI', category: 'cli', status: 'active', stateKind: 'exec', humanStatus: 'Patching', humanSummary: 'Patching API concurrency lock.', tool: 'apply_patch', target: 'src/api/refresh_mutex.ts (+18/-4)', thinking: 'Applying workspace-write sandbox patch.', tokens: 22600, elapsedSec: 41, shirtColor: '#10b981', parentId: 'orch-argon', parentName: 'Argon', propType: 'terminal', history: [] },
         { id: 'cli-copilot', name: 'GitHub Copilot CLI', modelBadge: 'GPT-5.6 Luna', role: 'External CLI', provider: 'copilot', providerLabel: 'Copilot CLI', category: 'cli', status: 'active', stateKind: 'plan', humanStatus: 'Reviewing', humanSummary: 'Auditing XSS & router edge cases.', tool: 'security_audit', target: 'src/routes/share_modal.ts', thinking: 'Inspecting URL parser and history hooks.', tokens: 16900, elapsedSec: 29, shirtColor: '#8b5cf6', parentId: 'orch-argon', parentName: 'Argon', propType: 'shield', history: [] },
@@ -547,10 +692,12 @@
 
       const $ = (id) => document.getElementById(id);
       const elModePill = $('mode-pill');
+      const elCtxPill = $('ctx-pill');
       const elBtnScopeCurrent = $('btn-scope-current');
       const elBtnScopeAll = $('btn-scope-all');
       const elBtnStudio = $('btn-view-studio');
       const elBtnMap = $('btn-view-map');
+      const elBtnContext = $('btn-view-context');
       const elBtnLangEn = $('btn-lang-en');
       const elBtnLangTr = $('btn-lang-tr');
       const elCountExec = $('count-exec');
@@ -559,6 +706,7 @@
       const elCountIdle = $('count-idle');
       const elStudioView = $('studio-view');
       const elMapView = $('map-view');
+      const elContextView = $('context-view');
       const elTabSelected = $('tab-selected');
       const elTabFeed = $('tab-feed');
       const elPanelSelected = $('panel-selected');
@@ -747,16 +895,32 @@
         elBtnScopeAll.textContent = d.allChats;
         elBtnStudio.textContent = d.studio;
         elBtnMap.textContent = d.map;
+        elBtnContext.textContent = d.contextTab;
 
         elBtnScopeCurrent.className = `seg-btn ${state.scope === 'current' ? 'active' : ''}`;
         elBtnScopeAll.className = `seg-btn ${state.scope === 'all' ? 'active' : ''}`;
         elBtnStudio.className = `seg-btn ${state.view === 'studio' ? 'active' : ''}`;
         elBtnMap.className = `seg-btn ${state.view === 'map' ? 'active' : ''}`;
+        elBtnContext.className = `seg-btn ${state.view === 'context' ? 'active' : ''}`;
         elBtnLangEn.className = `seg-btn ${state.lang === 'en' ? 'active' : ''}`;
         elBtnLangTr.className = `seg-btn ${state.lang === 'tr' ? 'active' : ''}`;
 
         elStudioView.classList.toggle('hidden', state.view !== 'studio');
         elMapView.classList.toggle('hidden', state.view !== 'map');
+        elContextView.classList.toggle('hidden', state.view !== 'context');
+
+        const ctxAgent = getContextTargetAgent();
+        if (ctxAgent && ctxAgent.contextWindow && ctxAgent.contextWindow.used > 0) {
+          const pct = ctxAgent.contextWindow.percent;
+          const col = pct >= 85 ? 'var(--error)' : (pct >= 70 ? 'var(--warning)' : 'var(--primary)');
+          elCtxPill.textContent = `Ctx ${pct}%`;
+          elCtxPill.style.color = col;
+          elCtxPill.style.borderColor = pct >= 70 ? col : 'var(--card-border)';
+          elCtxPill.dataset.tip = d.ctxTipPill;
+          elCtxPill.classList.remove('hidden');
+        } else {
+          elCtxPill.classList.add('hidden');
+        }
 
         const counts = {
           all: state.agents.length,
@@ -1072,10 +1236,151 @@
         });
       }
 
+      function fmtCompactNum(n) {
+        if (!n || n <= 0) return '0';
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+        return String(n);
+      }
+
+      function getContextTargetAgent() {
+        const sel = state.agents.find((a) => a.id === state.selectedId);
+        if (sel && sel.contextWindow && sel.contextWindow.used > 0) return sel;
+        const lead = state.agents.find((a) => a.id === state.leadOrchId && a.contextWindow && a.contextWindow.used > 0);
+        if (lead) return lead;
+        return state.agents.find((a) => a.contextWindow && a.contextWindow.used > 0) || null;
+      }
+
+      function buildTimelineChartSVG(timeline, limit, accentColor) {
+        if (!Array.isArray(timeline) || timeline.length < 2) {
+          return `<div class="muted" style="text-align:center; padding:18px 0; font-size:12px;">—</div>`;
+        }
+        const W = 400;
+        const H = 88;
+        const padX = 6;
+        const padY = 8;
+        const maxVal = Math.max(...timeline.map((p) => p.used), Math.round(limit * 0.1), 1000);
+        const pts = timeline.map((p, idx) => {
+          const x = padX + (idx / (timeline.length - 1)) * (W - padX * 2);
+          const y = H - padY - (p.used / maxVal) * (H - padY * 2);
+          return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)), used: p.used, time: p.time };
+        });
+        const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+        const areaPath = `${linePath} L${pts[pts.length - 1].x},${H - padY} L${pts[0].x},${H - padY} Z`;
+        const last = pts[pts.length - 1];
+        return `
+          <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:92px; display:block;" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="ctxGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.32"/>
+                <stop offset="100%" stop-color="${accentColor}" stop-opacity="0.02"/>
+              </linearGradient>
+            </defs>
+            <line x1="${padX}" y1="${padY}" x2="${W - padX}" y2="${padY}" stroke="var(--card-border)" stroke-dasharray="3 3" stroke-width="1"/>
+            <line x1="${padX}" y1="${H / 2}" x2="${W - padX}" y2="${H / 2}" stroke="var(--card-border)" stroke-dasharray="3 3" stroke-width="1"/>
+            <path d="${areaPath}" fill="url(#ctxGrad)"/>
+            <path d="${linePath}" fill="none" stroke="${accentColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle cx="${last.x}" cy="${last.y}" r="3.5" fill="${accentColor}"/>
+          </svg>
+        `;
+      }
+
+      function renderContextView() {
+        const d = t();
+        const agent = getContextTargetAgent();
+        if (!agent || !agent.contextWindow) {
+          elContextView.innerHTML = `<div class="muted" style="text-align:center; padding:24px 0;">${d.ctxNoData}</div>`;
+          return;
+        }
+        const cw = agent.contextWindow;
+        const barCol = cw.percent >= 85 ? 'var(--error)' : (cw.percent >= 70 ? 'var(--warning)' : 'var(--primary)');
+        const warnBanner = cw.percent >= 85
+          ? `<div class="sub-box" style="border-color: var(--error); color: var(--error); font-weight: 500; font-size: 12px;">⚠ ${d.ctxCompactCrit}</div>`
+          : (cw.percent >= 70
+              ? `<div class="sub-box" style="border-color: var(--warning); color: var(--warning); font-weight: 500; font-size: 12px;">⚠ ${d.ctxCompactWarn}</div>`
+              : '');
+
+        const maxSpike = cw.topSpikes?.length ? Math.max(...cw.topSpikes.map((s) => s.delta), 1) : 1;
+        const spikesHtml = (cw.topSpikes && cw.topSpikes.length > 0)
+          ? cw.topSpikes.map((sp) => {
+              const wPct = Math.max(8, Math.round((sp.delta / maxSpike) * 100));
+              return `
+                <div class="ctx-spike-row">
+                  <div class="row-between" style="flex-wrap:nowrap;">
+                    <span class="mono truncate" style="font-size:11.5px; color:var(--foreground);">${sp.label}</span>
+                    <span class="mono" style="font-size:11.5px; font-weight:600; color:${barCol}; flex-shrink:0;">+${fmtCompactNum(sp.delta)}</span>
+                  </div>
+                  <div class="ctx-bar-track" style="height:4px;">
+                    <div class="ctx-bar-fill" style="width:${wPct}%; background:${barCol};"></div>
+                  </div>
+                </div>
+              `;
+            }).join('')
+          : `<div class="muted" style="font-size:12px;">${d.ctxNoSpikes}</div>`;
+
+        const escAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+        elContextView.innerHTML = `
+          <div class="sub-box" style="gap: 8px;">
+            <div class="row-between">
+              <div class="row-center">
+                <span class="title has-tip" tabindex="0" data-tip="${escAttr(d.ctxTipWindow)}">${d.ctxTitle}<span class="tip-icon">?</span></span>
+                <span class="badge">${agent.name}</span>
+              </div>
+              <span class="badge mono">${agent.modelBadge}</span>
+            </div>
+            <div class="row-between" style="align-items:baseline;">
+              <span class="mono" style="font-size: 24px; font-weight: 700; color: ${barCol};">${cw.percent}%</span>
+              <span class="mono muted" style="font-size: 12.5px;">${fmtCompactNum(cw.used)} / ${fmtCompactNum(cw.limit)}</span>
+            </div>
+            <div class="ctx-bar-track">
+              <div class="ctx-bar-fill" style="width: ${Math.max(1, cw.percent)}%; background: ${barCol};"></div>
+            </div>
+          </div>
+
+          ${warnBanner}
+
+          <div class="ctx-metrics">
+            <div class="ctx-metric-card" tabindex="0" data-tip="${escAttr(d.ctxTipCacheHit)}">
+              <span class="muted has-tip" style="font-size:11px;">${d.ctxCacheHit}<span class="tip-icon">?</span></span>
+              <span class="mono" style="font-size:14px; font-weight:600; color:var(--success);">${cw.cacheHitRate}%</span>
+            </div>
+            <div class="ctx-metric-card" tabindex="0" data-tip="${escAttr(d.ctxTipCacheRead)}">
+              <span class="muted has-tip" style="font-size:11px;">${d.ctxCacheRead}<span class="tip-icon">?</span></span>
+              <span class="mono" style="font-size:14px; font-weight:600;">${fmtCompactNum(cw.lastCacheRead)}</span>
+            </div>
+            <div class="ctx-metric-card" tabindex="0" data-tip="${escAttr(d.ctxTipFreshIn)}">
+              <span class="muted has-tip" style="font-size:11px;">${d.ctxFreshIn}<span class="tip-icon">?</span></span>
+              <span class="mono" style="font-size:14px; font-weight:600;">${fmtCompactNum(cw.lastInput)}</span>
+            </div>
+            <div class="ctx-metric-card" tabindex="0" data-tip="${escAttr(d.ctxTipLastOut)}">
+              <span class="muted has-tip" style="font-size:11px;">${d.ctxLastOut}<span class="tip-icon">?</span></span>
+              <span class="mono" style="font-size:14px; font-weight:600;">${fmtCompactNum(cw.lastOutput)}</span>
+            </div>
+          </div>
+
+          <div class="sub-box" style="gap: 6px;">
+            <div class="row-between" style="font-size:12px;">
+              <span class="muted has-tip" tabindex="0" style="font-weight:500;" data-tip="${escAttr(d.ctxTipTimeline)}">${d.ctxTimeline}<span class="tip-icon">?</span></span>
+              <span class="mono muted">${d.ctxTurns(cw.totalTurns)}</span>
+            </div>
+            ${buildTimelineChartSVG(cw.timeline, cw.limit, barCol)}
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div class="muted" style="font-size:12px; font-weight:500;">
+              <span class="has-tip" tabindex="0" data-tip="${escAttr(d.ctxTipSpikes)}">${d.ctxTopSpikes}<span class="tip-icon">?</span></span>
+            </div>
+            ${spikesHtml}
+          </div>
+        `;
+      }
+
       function renderAll() {
         renderHeader();
         if (state.view === 'studio') renderStudioView();
-        else renderMapView();
+        else if (state.view === 'map') renderMapView();
+        else renderContextView();
         renderInspector();
         renderFeed();
       }
@@ -1158,6 +1463,8 @@
       });
       elBtnStudio.addEventListener('click', () => { state.view = 'studio'; renderAll(); });
       elBtnMap.addEventListener('click', () => { state.view = 'map'; renderAll(); });
+      elBtnContext.addEventListener('click', () => { state.view = 'context'; renderAll(); });
+      elCtxPill.addEventListener('click', () => { state.view = 'context'; renderAll(); });
       elTabSelected.addEventListener('click', () => { state.bottomTab = 'selected'; renderHeader(); });
       elTabFeed.addEventListener('click', () => { state.bottomTab = 'feed'; renderHeader(); });
 
@@ -1187,6 +1494,56 @@
         state.demoSwarmSpawned = !state.demoSwarmSpawned;
         loadDemoMode();
       });
+
+      // Lightweight viewport-clamped hover/focus tooltip for [data-tip] elements
+      const elTooltip = document.createElement('div');
+      elTooltip.className = 'agy-tooltip';
+      elTooltip.setAttribute('role', 'tooltip');
+      document.body.appendChild(elTooltip);
+      let activeTipEl = null;
+
+      function hideTooltip() {
+        activeTipEl = null;
+        elTooltip.classList.remove('visible');
+      }
+
+      function showTooltip(target) {
+        const text = target && target.dataset ? target.dataset.tip : '';
+        if (!text) { hideTooltip(); return; }
+        activeTipEl = target;
+        elTooltip.textContent = text;
+        elTooltip.style.left = '0px';
+        elTooltip.style.top = '0px';
+        elTooltip.classList.add('visible');
+
+        const rect = target.getBoundingClientRect();
+        const tipW = elTooltip.offsetWidth || 220;
+        const tipH = elTooltip.offsetHeight || 40;
+        const pad = 8;
+        let left = rect.left + (rect.width - tipW) / 2;
+        left = Math.max(pad, Math.min(left, window.innerWidth - tipW - pad));
+        let top = rect.top - tipH - 8;
+        if (top < pad) top = rect.bottom + 8;
+        elTooltip.style.left = `${Math.round(left)}px`;
+        elTooltip.style.top = `${Math.round(top)}px`;
+      }
+
+      document.addEventListener('mouseover', (e) => {
+        const target = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+        if (target) showTooltip(target);
+        else if (activeTipEl) hideTooltip();
+      });
+      document.addEventListener('mouseout', (e) => {
+        if (!activeTipEl) return;
+        const next = e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest('[data-tip]') : null;
+        if (next !== activeTipEl) hideTooltip();
+      });
+      document.addEventListener('focusin', (e) => {
+        const target = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+        if (target) showTooltip(target);
+      });
+      document.addEventListener('focusout', () => hideTooltip());
+      window.addEventListener('scroll', hideTooltip, true);
 
       setInterval(() => pollLiveState(false), 1800);
       pollLiveState(true);

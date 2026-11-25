@@ -7,9 +7,10 @@ Monitor **Orchestrator (`Argon` / `Neon`)**, **Swarm workers**, **subagents**, a
 ## Features
 
 - **Native Antigravity Side Panel (Zero External Dependencies):** Runs on Node.js standard library + Antigravity's built-in `sidecar_sdk` (~20–35 MB RAM, zero `npm install`, zero external CDNs).
-- **Two Views (`Studio` & `Map`):**
+- **Three Views (`Studio`, `Map` & `Context`):**
   - **Studio (Office):** Crisp integer-grid 3/4 pixel-art workstations organized by floor (Orchestrator Deck, Swarm & Dev Floor, External CLI Lab, Coffee Lounge). Automatically collapses large Swarms into a compact strip with one-click expand.
   - **Map (Tree):** Groups subagents, native `/swarm` workers, and external CLI runs under their actual parent Orchestrator (`Argon` / `Neon`).
+  - **Context Window:** Live context usage percentage (`Ctx %` pill in header + dedicated tab), model-aware limit (1M for Gemini 4, 200k for Claude), Cache Hit %, growth timeline SVG chart, top token-spike steps, and `/compact` alerts.
 - **Scope Filter (`This Chat` | `All`):** Defaults to **This Chat** (showing only the active conversation, its subagents/Swarm workers, and CLIs invoked during that session) with a one-click toggle to view all recent sessions.
 - **Live Inspector & Unified Feed:** Click any desk, map card, or event row to inspect the active tool, target file/command, reasoning snippet, recent steps, and token count — plus a **Jump to Chat** button for Antigravity sessions.
 - **Bilingual UI (`EN` | `TR`):** Auto-detects language and lets you switch between English and Turkish on the fly.

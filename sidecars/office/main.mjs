@@ -295,6 +295,13 @@ function describeToolAction(toolName, args, lang) {
   }
 }
 
+function getContextLimit(modelStr) {
+  const s = (modelStr || '').toLowerCase();
+  if (s.includes('claude') || s.includes('sonnet') || s.includes('opus')) return 200000;
+  if (s.includes('gpt-oss')) return 128000;
+  return 1000000;
+}
+
 function parseAntigravityEntry(entry, subagentParentMap, lang) {
   const { mtimeMs, lines } = readJsonlSlices(entry.logPath);
   if (!lines.length) return null;
@@ -312,6 +319,16 @@ function parseAntigravityEntry(entry, subagentParentMap, lang) {
   let lastSubagentType = 'subagent';
   const history = [];
 
+  // Context window telemetry tracking
+  let prevCtxUsed = null;
+  let prevStepIndex = null;
+  let lastInput = 0;
+  let lastCacheRead = 0;
+  let lastOutput = 0;
+  let pendingCause = null;
+  const timeline = [];
+  const spikes = [];
+
   for (const step of lines) {
     const ts = step.created_at ? Date.parse(step.created_at) : NaN;
     if (!isNaN(ts)) {
@@ -319,8 +336,41 @@ function parseAntigravityEntry(entry, subagentParentMap, lang) {
       if (ts > lastTsMs) lastTsMs = ts;
     }
 
+    const hasTokenMetrics =
+      typeof step.input_tokens === 'number' ||
+      typeof step.cache_read_tokens === 'number' ||
+      typeof step.output_tokens === 'number';
     if (typeof step.input_tokens === 'number') totalTokens += step.input_tokens;
     if (typeof step.output_tokens === 'number') totalTokens += step.output_tokens;
+    if (hasTokenMetrics && step.type === 'PLANNER_RESPONSE') {
+      const inp = typeof step.input_tokens === 'number' ? step.input_tokens : 0;
+      const cache = typeof step.cache_read_tokens === 'number' ? step.cache_read_tokens : 0;
+      const out = typeof step.output_tokens === 'number' ? step.output_tokens : 0;
+      const ctxUsed = inp + cache + out;
+      if (ctxUsed > 0) {
+        const stepTime = fmtHMS(step.created_at || mtimeMs);
+        const currIdx = typeof step.step_index === 'number' ? step.step_index : timeline.length;
+        timeline.push({ step: currIdx, time: stepTime, used: ctxUsed });
+        const stepGap = prevStepIndex !== null ? currIdx - prevStepIndex : 1;
+        if (prevCtxUsed !== null && stepGap > 0 && stepGap <= 12) {
+          const delta = ctxUsed - prevCtxUsed;
+          if (delta > 500 && pendingCause) {
+            spikes.push({
+              delta,
+              tool: pendingCause.tool,
+              label: pendingCause.label,
+              time: stepTime,
+            });
+          }
+        }
+        prevCtxUsed = ctxUsed;
+        prevStepIndex = currIdx;
+        lastInput = inp;
+        lastCacheRead = cache;
+        lastOutput = out;
+      }
+    }
+
     if (typeof step.model === 'string' && step.model.trim()) {
       if (!selectedModel || !selectedModel.toLowerCase().includes('orchestrator')) {
         selectedModel = step.model.trim();
@@ -335,6 +385,7 @@ function parseAntigravityEntry(entry, subagentParentMap, lang) {
         if (p) {
           if (!firstPrompt) firstPrompt = p;
           latestPrompt = p;
+          pendingCause = { tool: 'user_input', label: p.slice(0, 48) };
         }
         inExecPhase = false;
       }
@@ -371,6 +422,7 @@ function parseAntigravityEntry(entry, subagentParentMap, lang) {
           if (/\bdeepseek\b|\bdsh\b|\bdeepcode\b/i.test(cmdLine)) cliUsed.deepseek = true;
         }
         const desc = describeToolAction(tc.name, tc.args, lang);
+        pendingCause = { tool: tc.name, label: `${tc.name} → ${desc.techTarget}`.slice(0, 64) };
         history.push({
           time: fmtHMS(step.created_at || mtimeMs),
           tool: tc.name,
@@ -413,6 +465,13 @@ function parseAntigravityEntry(entry, subagentParentMap, lang) {
     }
   } catch {}
 
+  const limit = getContextLimit(selectedModel);
+  const used = prevCtxUsed || 0;
+  const percent = limit > 0 ? Math.min(100, Number(((used / limit) * 100).toFixed(1))) : 0;
+  const totalIn = lastInput + lastCacheRead;
+  const cacheHitRate = totalIn > 0 ? Number(((lastCacheRead / totalIn) * 100).toFixed(1)) : 0;
+  const topSpikes = spikes.sort((a, b) => b.delta - a.delta).slice(0, 5);
+
   return {
     id: entry.id,
     mtimeMs,
@@ -426,6 +485,18 @@ function parseAntigravityEntry(entry, subagentParentMap, lang) {
     inExecPhase,
     cliUsed,
     history,
+    contextWindow: {
+      used,
+      limit,
+      percent,
+      lastInput,
+      lastCacheRead,
+      lastOutput,
+      cacheHitRate,
+      totalTurns: timeline.length,
+      timeline: timeline.slice(-40),
+      topSpikes,
+    },
   };
 }
 
@@ -998,6 +1069,7 @@ export function buildLiveSnapshot(currentConvId, scope = 'current', lang = 'en')
       target: lastHist?.target || (s.latestPrompt ? s.latestPrompt.slice(0, 48) : L(effectiveLang, 'Ready', 'Hazır')),
       thinking: s.latestThinking || (s.latestPrompt ? `${L(effectiveLang, 'Request', 'İstek')}: "${s.latestPrompt}"` : L(effectiveLang, 'Waiting for message.', 'Yeni mesaj bekleniyor.')),
       tokens: s.totalTokens,
+      contextWindow: s.contextWindow,
       elapsedSec: Math.max(1, Math.round((s.lastTsMs - s.firstTsMs) / 1000)),
       shirtColor: style.shirt,
       parentId: subInfo ? subInfo.parentId : null,
@@ -1064,7 +1136,7 @@ export function buildLiveSnapshot(currentConvId, scope = 'current', lang = 'en')
   feed.sort((a, b) => (b.mtimeMs - a.mtimeMs) || b.time.localeCompare(a.time));
 
   const etag = `${effectiveScope}|${effectiveLang}|` + agents
-    .map((a) => `${a.id}:${Math.floor(a.mtimeMs)}:${a.tokens}:${a.stateKind}`)
+    .map((a) => `${a.id}:${Math.floor(a.mtimeMs)}:${a.tokens}:${a.contextWindow?.used || 0}:${a.stateKind}`)
     .join('|');
 
   return {
